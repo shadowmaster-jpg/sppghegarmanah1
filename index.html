@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPPG HEGARMANAH 1 - Web Absensi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-blue-700 text-white p-5 shadow-lg flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold tracking-wide">SPPG HEGARMANAH 1</h1>
+            <p class="text-sm text-blue-200">Sistem Informasi Absensi Relawan</p>
+        </div>
+        <div class="flex space-x-2">
+            <button onclick="switchTab('relawan')" id="btnRelawan" class="px-4 py-2 rounded bg-white text-blue-700 font-semibold shadow">Akses Relawan</button>
+            <button onclick="switchTab('admin')" id="btnAdmin" class="px-4 py-2 rounded bg-blue-800 text-white font-semibold shadow hover:bg-blue-900">Akses Admin</button>
+        </div>
+    </header>
+
+    <div class="max-w-6xl mx-auto m-6 p-4">
+        <!-- Form Relawan -->
+        <div id="sectionRelawan" class="space-y-6">
+            <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-blue-600">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Form Absensi Relawan</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700">Nama Lengkap</label>
+                        <select id="selectNamaRelawan" class="w-full mt-1 p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">-- Memuat Daftar Nama... --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700">Jabatan</label>
+                        <select id="selectJabatan" class="w-full mt-1 p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="Asisten Lapangan">Asisten Lapangan</option>
+                            <option value="Jurutama Masak">Jurutama Masak</option>
+                            <option value="Tim Pengolahan">Tim Pengolahan</option>
+                            <option value="Tim Persiapan">Tim Persiapan</option>
+                            <option value="Tim Pemorsian & Packing">Tim Pemorsian & Packing</option>
+                            <option value="Tim Pencucian">Tim Pencucian</option>
+                            <option value="Tim Distribusi">Tim Distribusi</option>
+                            <option value="Petugas Kebersihan">Petugas Kebersihan</option>
+                            <option value="Petugas Keamanan">Petugas Keamanan</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700">Status Kehadiran</label>
+                        <select id="selectStatus" onchange="toggleFormByStatus()" class="w-full mt-1 p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-blue-700">
+                            <option value="Hadir">Hadir</option>
+                            <option value="Sakit">Sakit</option>
+                            <option value="Izin">Izin</option>
+                        </select>
+                    </div>
+                    <div id="wrapperLokasi">
+                        <label class="block text-sm font-semibold text-gray-700">Lokasi</label>
+                        <div class="flex space-x-2">
+                            <input type="text" id="lokasiRelawan" placeholder="Klik 'GPS'" class="w-full mt-1 p-2 border rounded bg-gray-50 text-sm" readonly>
+                            <button onclick="getLokasi()" class="mt-1 px-3 py-2 bg-gray-600 text-white text-xs rounded hover:bg-gray-700">GPS</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Kamera / Foto Diri -->
+                <div id="wrapperFoto" class="mt-4">
+                    <label class="block text-sm font-semibold text-gray-700">Foto Diri (Wajib)</label>
+                    <input type="file" id="inputFoto" accept="image/*" capture="user" onchange="previewImage(event)" class="mt-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    <div class="mt-2 hidden" id="previewContainer">
+                        <img id="imagePreview" src="" alt="Preview Foto" class="w-28 h-28 object-cover rounded border shadow-sm">
+                    </div>
+                </div>
+
+                <!-- Tombol Aksi Relawan -->
+                <div class="mt-5 flex space-x-3">
+                    <div id="btnHadirGroup" class="flex space-x-3">
+                        <button onclick="kirimAbsen('absenMasuk')" class="px-5 py-2 bg-green-600 text-white font-semibold rounded hover:bg-green-700 shadow">Absen Masuk</button>
+                        <button onclick="kirimAbsen('absenKeluar')" class="px-5 py-2 bg-red-600 text-white font-semibold rounded hover:bg-red-700 shadow">Absen Keluar</button>
+                    </div>
+                    <button id="btnIzinSakit" onclick="kirimAbsen('absenIzinSakit')" class="hidden px-5 py-2 bg-yellow-600 text-white font-semibold rounded hover:bg-yellow-700 shadow">Kirim Keterangan</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auth Admin -->
+        <div id="sectionAdminAuth" class="hidden bg-white p-6 rounded-lg shadow-md max-w-md mx-auto">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">Masuk Akses Admin</h2>
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700">PIN Admin</label>
+                <input type="password" id="inputPin" placeholder="Masukkan PIN Admin" class="w-full mt-1 p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <button onclick="verifyPin()" class="w-full py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700">Verifikasi PIN</button>
+        </div>
+
+        <!-- Panel Kelola Master Nama (Hanya Admin) -->
+        <div id="sectionAdminPanel" class="hidden bg-white p-6 rounded-lg shadow-md mb-6 border-t-4 border-yellow-500">
+            <h2 class="text-lg font-bold text-gray-800 mb-2">Panel Kontrol Admin</h2>
+            <p class="text-xs text-gray-500 mb-4">Tambahkan nama relawan baru ke dalam daftar dropdown otomatis.</p>
+            <div class="flex space-x-2 max-w-md">
+                <input type="text" id="inputNamaMaster" placeholder="Nama Relawan Baru" class="w-full p-2 border rounded outline-none">
+                <button onclick="tambahNamaRelawan()" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 whitespace-nowrap">Tambah Nama</button>
+            </div>
+        </div>
+
+        <!-- Tabel Data Absensi -->
+        <div id="sectionTable" class="mt-6 bg-white p-6 rounded-lg shadow-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800">Data Absensi Real-time</h2>
+                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Memperbarui otomatis per 15 detik</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-700 uppercase text-xs">
+                            <th class="p-3 border">Nama Lengkap</th>
+                            <th class="p-3 border">Jabatan</th>
+                            <th class="p-3 border">Status</th>
+                            <th class="p-3 border">Waktu Masuk</th>
+                            <th id="thFotoMasuk" class="p-3 border hidden text-center">Foto Masuk (Admin)</th>
+                            <th class="p-3 border">Waktu Keluar</th>
+                            <th id="thFotoKeluar" class="p-3 border hidden text-center">Foto Keluar (Admin)</th>
+                            <th class="p-3 border">Lokasi</th>
+                            <th id="thAksi" class="p-3 border hidden text-center">Aksi (Admin)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="text-sm">
+                        <tr>
+                            <td colspan="9" class="text-center p-4 text-gray-500">Memuat data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Pratinjau Foto Admin -->
+    <div id="modalFoto" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onclick="closeModalFoto()">
+        <div class="max-w-lg w-full bg-white p-3 rounded-lg shadow-xl" onclick="event.stopPropagation()">
+            <img id="modalImg" src="" alt="Foto Absen" class="w-full h-auto rounded">
+            <button onclick="closeModalFoto()" class="mt-3 w-full py-2 bg-gray-800 text-white rounded font-semibold text-sm">Tutup Pratinjau</button>
+        </div>
+    </div>
+
+    <script>
+        // MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+        const API_URL = "https://script.google.com/macros/s/AKfycbyam3ks3U-v0NDGl3waMpMUI4dNruu1FXysH-xgAYAwhyuEefWGw1uMYJk2qcFa7r6Mng/exec";
+        
+        let currentMode = 'relawan';
+        let adminPin = "";
+        let base64Foto = "";
+
+        function switchTab(mode) {
+            currentMode = mode;
+            if (mode === 'relawan') {
+                document.getElementById('sectionRelawan').classList.remove('hidden');
+                document.getElementById('sectionAdminAuth').classList.add('hidden');
+                document.getElementById('thAksi').classList.add('hidden');
+                document.getElementById('thFotoMasuk').classList.add('hidden');
+                document.getElementById('thFotoKeluar').classList.add('hidden');
+                document.getElementById('btnRelawan').className = "px-4 py-2 rounded bg-white text-blue-700 font-semibold shadow";
+                document.getElementById('btnAdmin').className = "px-4 py-2 rounded bg-blue-800 text-white font-semibold shadow hover:bg-blue-900";
+            } else {
+                document.getElementById('sectionRelawan').classList.add('hidden');
+                if (adminPin !== "admin0019") {
+                    document.getElementById('sectionAdminAuth').classList.remove('hidden');
+                } else {
+                    document.getElementById('thFotoMasuk').classList.remove('hidden');
+                    document.getElementById('thFotoKeluar').classList.remove('hidden');
+                }
+                document.getElementById('btnAdmin').className = "px-4 py-2 rounded bg-white text-blue-700 font-semibold shadow";
+                document.getElementById('btnRelawan').className = "px-4 py-2 rounded bg-blue-800 text-white font-semibold shadow hover:bg-blue-900";
+            }
+            fetchData();
+        }
+
+        function toggleFormByStatus() {
+            const status = document.getElementById('selectStatus').value;
+            const wrapperLokasi = document.getElementById('wrapperLokasi');
+            const wrapperFoto = document.getElementById('wrapperFoto');
+            const btnHadirGroup = document.getElementById('btnHadirGroup');
+            const btnIzinSakit = document.getElementById('btnIzinSakit');
+
+            if (status === 'Sakit' || status === 'Izin') {
+                wrapperLokasi.classList.add('hidden');
+                wrapperFoto.classList.add('hidden');
+                btnHadirGroup.classList.add('hidden');
+                btnIzinSakit.classList.remove('hidden');
+            } else {
+                wrapperLokasi.classList.remove('hidden');
+                wrapperFoto.classList.remove('hidden');
+                btnHadirGroup.classList.remove('hidden');
+                btnIzinSakit.classList.add('hidden');
+            }
+        }
+
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        const maxDim = 200; // Kompresi ringan agar pengiriman lebih cepat
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > maxDim) {
+                                height *= maxDim / width;
+                                width = maxDim;
+                            }
+                        } else {
+                            if (height > maxDim) {
+                                width *= maxDim / height;
+                                height = maxDim;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        base64Foto = canvas.toDataURL('image/jpeg', 0.5);
+                        document.getElementById('imagePreview').src = base64Foto;
+                        document.getElementById('previewContainer').classList.remove('hidden');
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function verifyPin() {
+            const pin = document.getElementById('inputPin').value;
+            if (pin === "admin0019") {
+                adminPin = pin;
+                document.getElementById('sectionAdminAuth').classList.add('hidden');
+                document.getElementById('sectionAdminPanel').classList.remove('hidden');
+                document.getElementById('thAksi').classList.remove('hidden');
+                document.getElementById('thFotoMasuk').classList.remove('hidden');
+                document.getElementById('thFotoKeluar').classList.remove('hidden');
+                alert("Login Admin Berhasil!");
+                fetchData();
+            } else {
+                alert("PIN Admin Salah!");
+            }
+        }
+
+        function getLokasi() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    document.getElementById('lokasiRelawan').value = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+                }, () => {
+                    alert("Gagal mengambil lokasi GPS.");
+                });
+            } else {
+                alert("Browser tidak mendukung GPS.");
+            }
+        }
+
+        function kirimAbsen(action) {
+            const nama = document.getElementById('selectNamaRelawan').value;
+            const jabatan = document.getElementById('selectJabatan').value;
+            const status = document.getElementById('selectStatus').value;
+            const lokasi = document.getElementById('lokasiRelawan').value;
+
+            if (!nama) return alert("Silakan pilih Nama Lengkap terlebih dahulu!");
+
+            if (status === 'Hadir') {
+                if (action === 'absenMasuk' && !lokasi) return alert("Silakan dapatkan lokasi GPS terlebih dahulu!");
+                if (!base64Foto) return alert("Silakan ambil/upload Foto Diri terlebih dahulu!");
+            }
+
+            fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action, nama, jabatan, status, lokasi, foto: base64Foto })
+            })
+            .then(res => res.json())
+            .then(res => {
+                alert(res.message);
+                if (res.status === 'success') {
+                    document.getElementById('lokasiRelawan').value = '';
+                    document.getElementById('inputFoto').value = '';
+                    document.getElementById('previewContainer').classList.add('hidden');
+                    base64Foto = "";
+                    fetchData();
+                }
+            });
+        }
+
+        function tambahNamaRelawan() {
+            const namaBaru = document.getElementById('inputNamaMaster').value;
+            if (!namaBaru) return alert("Masukkan Nama Relawan Baru!");
+
+            fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'tambahNamaMaster', pin: adminPin, namaBaru: namaBaru })
+            })
+            .then(res => res.json())
+            .then(res => {
+                alert(res.message);
+                document.getElementById('inputNamaMaster').value = '';
+                fetchData();
+            });
+        }
+
+        function fetchData() {
+            if (!API_URL || API_URL === "GANTI_DENGAN_URL_SCRIPT_ANDA") return;
+            
+            fetch(API_URL)
+            .then(res => res.json())
+            .then(data => {
+                // Populate Dropdown Nama Relawan
+                const selectNama = document.getElementById('selectNamaRelawan');
+                const selectedVal = selectNama.value;
+                selectNama.innerHTML = '<option value="">-- Pilih Nama Anda --</option>';
+                data.daftarNama.forEach(nama => {
+                    const opt = document.createElement('option');
+                    opt.value = nama;
+                    opt.textContent = nama;
+                    if (nama === selectedVal) opt.selected = true;
+                    selectNama.appendChild(opt);
+                });
+
+                // Populate Tabel Absensi
+                const tbody = document.getElementById('tableBody');
+                tbody.innerHTML = '';
+
+                if (data.absensi.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="9" class="text-center p-4 text-gray-500">Belum ada data absensi</td></tr>`;
+                    return;
+                }
+
+                data.absensi.reverse().forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-50 border-b";
+
+                    let badgeColor = "bg-blue-100 text-blue-800";
+                    if (row.status === "Melebihi") badgeColor = "bg-purple-100 text-purple-800 font-bold";
+                    if (row.status === "Sakit") badgeColor = "bg-red-100 text-red-800";
+                    if (row.status === "Izin") badgeColor = "bg-yellow-100 text-yellow-800";
+
+                    let aksiTd = '';
+                    let fotoMasukTd = '';
+                    let fotoKeluarTd = '';
+
+                    if (adminPin === "admin0019") {
+                        const imgMasuk = (row.fotoMasuk && row.fotoMasuk !== "-") ? `<img src="${row.fotoMasuk}" onclick="showModalFoto('${row.fotoMasuk}')" class="w-10 h-10 object-cover rounded cursor-pointer mx-auto border hover:scale-105 transition">` : '-';
+                        const imgKeluar = (row.fotoKeluar && row.fotoKeluar !== "-") ? `<img src="${row.fotoKeluar}" onclick="showModalFoto('${row.fotoKeluar}')" class="w-10 h-10 object-cover rounded cursor-pointer mx-auto border hover:scale-105 transition">` : '-';
+
+                        fotoMasukTd = `<td class="p-2 border text-center">${imgMasuk}</td>`;
+                        fotoKeluarTd = `<td class="p-2 border text-center">${imgKeluar}</td>`;
+
+                        aksiTd = `
+                            <td class="p-2 border text-center space-x-1">
+                                <button onclick="editRow(${row.rowId}, '${row.nama}', '${row.jabatan}', '${row.status}', '${row.waktuMasuk}', '${row.waktuKeluar}', '${row.lokasi}')" class="px-2 py-1 bg-yellow-500 text-white rounded text-xs hover:bg-yellow-600">Edit</button>
+                                <button onclick="deleteRow(${row.rowId})" class="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700">Hapus</button>
+                            </td>
+                        `;
+                    }
+
+                    tr.innerHTML = `
+                        <td class="p-3 border font-medium">${row.nama}</td>
+                        <td class="p-3 border">${row.jabatan}</td>
+                        <td class="p-3 border"><span class="px-2 py-1 rounded text-xs ${badgeColor}">${row.status}</span></td>
+                        <td class="p-3 border">${row.waktuMasuk}</td>
+                        ${fotoMasukTd}
+                        <td class="p-3 border">${row.waktuKeluar}</td>
+                        ${fotoKeluarTd}
+                        <td class="p-3 border">${row.lokasi}</td>
+                        ${aksiTd}
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        function showModalFoto(src) {
+            document.getElementById('modalImg').src = src;
+            document.getElementById('modalFoto').classList.remove('hidden');
+        }
+
+        function closeModalFoto() {
+            document.getElementById('modalFoto').classList.add('hidden');
+        }
+
+        function editRow(rowId, nama, jabatan, status, masuk, keluar, lokasi) {
+            const newNama = prompt("Edit Nama Lengkap:", nama);
+            const newJabatan = prompt("Edit Jabatan:", jabatan);
+            const newStatus = prompt("Edit Status (Hadir / Melebihi / Sakit / Izin):", status);
+            const newMasuk = prompt("Edit Waktu Masuk:", masuk);
+            const newKeluar = prompt("Edit Waktu Keluar:", keluar);
+            const newLokasi = prompt("Edit Lokasi:", lokasi);
+
+            if (newNama !== null) {
+                fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'updateData',
+                        pin: adminPin,
+                        rowId: rowId,
+                        nama: newNama,
+                        jabatan: newJabatan,
+                        status: newStatus,
+                        waktuMasuk: newMasuk,
+                        waktuKeluar: newKeluar,
+                        lokasi: newLokasi
+                    })
+                })
+                .then(res => res.json())
+                .then(res => {
+                    alert(res.message);
+                    fetchData();
+                });
+            }
+        }
+
+        function deleteRow(rowId) {
+            if (confirm("Apakah Anda yakin ingin menghapus data ini?")) {
+                fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'deleteData',
+                        pin: adminPin,
+                        rowId: rowId
+                    })
+                })
+                .then(res => res.json())
+                .then(res => {
+                    alert(res.message);
+                    fetchData();
+                });
+            }
+        }
+
+        // Auto-refresh diubah menjadi per 15 detik agar sistem lebih cepat & tidak lag
+        setInterval(fetchData, 15000);
+        window.onload = fetchData;
+    </script>
+</body>
+</html>
